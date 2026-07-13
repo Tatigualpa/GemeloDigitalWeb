@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  background: #070a12;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(20, 184, 166, 0.13), transparent 28rem),
+    radial-gradient(circle at 82% 8%, rgba(99, 102, 241, 0.14), transparent 26rem),
+    linear-gradient(135deg, #070a12 0%, #0d1422 48%, #071018 100%);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+canvas {
+  touch-action: none;
+}
