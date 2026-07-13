@@ -210,24 +210,29 @@ Si el brazo 3D en `http://localhost:5173` reacciona a estos mensajes simulados, 
 
 ---
 
-## Fase 4 — Firmware ESP32 (se escribe y se compila, no se sube todavía)
+## Fase 4 — Firmware ESP32 ✅ completada 2026-07-13 (compilado de verdad, no solo revisado)
 
-**Archivo nuevo:** `firmware/esp32_mqtt_g6/esp32_mqtt_g6.ino` — sketch **separado** del original. `firmware/esp32_mpu_tca9548a/esp32_mpu_tca9548a.ino` no se toca ni se borra; queda como respaldo funcional garantizado.
+**Actuador decidido:** servo (no LED) — representa la **mano** del gemelo digital. Los 3 sensores (hombro/codo/muñeca) solo observan; el servo es la única pieza que actúa, abriéndose/cerrándose según el switch del dashboard. Ver la conversación de esa decisión para el razonamiento completo (LED era la alternativa más simple, servo se eligió por mejor narrativa para el informe).
 
-**Librerías a instalar ahora en el IDE de Arduino** (esto no requiere el ESP32 conectado):
-- `PubSubClient` (cliente MQTT)
-- `ESP32Servo` (control del servo — no usar `Servo.h` clásico, es para AVR)
-- `ArduinoJson` (armar el payload de cada sensor)
+**Archivo nuevo:** `firmware/esp32_mqtt_g6/esp32_mqtt_g6.ino` — sketch **separado** del original. `firmware/esp32_mpu_tca9548a/esp32_mpu_tca9548a.ino` no se tocó ni se borró; sigue siendo el respaldo funcional garantizado. Se leyó ese archivo completo antes de escribir el nuevo, y toda la lógica de registros I2C/TCA9548A/MPU6050 (`seleccionarCanalTCA`, `leerRegistro`, `escribirRegistro`, `inicializarMPU`, `leerMPU`) se copió **exactamente igual**, sin cambiar un byte — solo se le agregó a dónde mandar el resultado.
 
-**Qué se puede verificar ahora sin el ESP32 conectado:** en el IDE de Arduino, *Sketch → Verificar/Compilar* (Ctrl+R) con la placa "ESP32 Dev Module" seleccionada. Esto compila el código y detecta errores de sintaxis o de librerías faltantes **sin necesidad de que la placa esté físicamente conectada** — solo *Subir* requiere el puerto real.
+**Cambio de diseño respecto al plan original:** se descartó `ArduinoJson`. El payload de cada sensor es siempre el mismo shape fijo (`ax,ay,az,gx,gy,gz`), así que se arma a mano con `snprintf` — una librería menos que instalar y una fuente menos de incompatibilidad de versiones (ArduinoJson v6 vs v7 tienen APIs distintas). Librerías realmente usadas: `PubSubClient` y `ESP32Servo`.
 
-**Qué NO se puede verificar todavía (queda pendiente de la Fase 5):**
+**Verificación real con compilador, no solo revisión manual:**
+1. Se instaló `arduino-cli` (no existía Arduino CLI en la máquina; sí existía Arduino IDE, pero sin el core de ESP32 instalado todavía).
+2. **Incidente:** al instalar el core de ESP32 (~2GB entre todas las variantes de chip), la unidad `C:` se quedó sin espacio (`0.65 GB` libres de partida, insuficiente). Se detectó, se detuvo la instalación en vez de reintentar a ciegas, y se investigó antes de tocar nada del sistema.
+3. **Solución:** se movieron los datos de Arduino (`C:\Users\...\AppData\Local\Arduino15`, 2.09 GB) a `D:\ArduinoData` (el disco del proyecto, con 283 GB libres), reutilizando lo ya descargado en vez de bajar todo de nuevo. `arduino-cli` se reconfiguró (`D:\ArduinoData\arduino-cli.yaml`) para usar esa ubicación.
+4. Con esto, el core de ESP32, `PubSubClient` y `ESP32Servo` quedaron instalados, y `arduino-cli compile --fqbn esp32:esp32:esp32` compiló el sketch **sin errores**: Flash 946879/1310720 bytes (72%), RAM 48476/327680 bytes (14%) — margen amplio en ambos.
+
+**⚠️ Pendiente importante para la Fase 6:** el Arduino IDE gráfico (si lo abres) sigue apuntando por defecto a `C:\Users\...\Arduino15`, que ya no tiene el core de ESP32 (se movió a `D:\ArduinoData`). Cuando llegue el momento de subir el firmware con el IDE, hay que resolver esto — o apuntar el IDE a `D:\ArduinoData`, o instalar el core ahí de nuevo en el IDE (ojo: eso volvería a pedir ~2GB, hay que asegurarse de que `C:` tenga espacio antes). Se revisa en la Fase 6.
+
+**Qué NO se pudo verificar todavía (pendiente de hardware real, Fase 6):**
 - Lectura real de los tres MPU6050 vía TCA9548A.
 - Conexión real al WiFi del hotspot.
 - Conexión real al broker MQTT desde el ESP32.
 - Movimiento real del servo.
 
-El contenido exacto del sketch (WiFi + MQTT + publicación de los 3 sensores + suscripción al comando del actuador) se escribe en esta fase; te lo entrego con placeholders claramente marcados para `ssid`, `password` y `mqtt_host`, que se completan recién en la Fase 5 cuando tengas la red del hotspot armada.
+El sketch tiene los placeholders `WIFI_SSID`, `WIFI_PASSWORD` y `MQTT_HOST` marcados con `TODO`, para completar en la Fase 6.3 cuando exista la red del hotspot.
 
 ---
 

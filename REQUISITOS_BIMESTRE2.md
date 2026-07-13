@@ -90,7 +90,7 @@ Estas son elecciones que hice para poder plantear un plan concreto. Ninguna vien
 
 | Decisión | Qué propongo | Estado |
 |---|---|---|
-| Actuador a usar | Servo SG90 en una articulación (ej. codo) | **Propuesto, pendiente de tu confirmación** — el enunciado no dice qué actuador usar, solo que exista uno |
+| Actuador a usar | Servo, representando la "mano" del gemelo digital (abre/cierra) — no un LED | **Confirmado por ti**, tras comparar explícitamente las dos opciones (LED vs. servo) — el enunciado no dice qué actuador usar, solo que exista uno |
 | Conservar la app React 3D del bimestre 1 | Sí, alimentada por un puente MQTT→WebSocket nuevo | **Confirmado por ti** en la conversación anterior |
 | Nombres de los tópicos MQTT | `g6/brazo/sensores/{hombro,codo,muneca}`, `g6/brazo/actuador/{cmd,estado}` | Propuesto — el enunciado solo exige que estén "correctamente organizados", no da nombres |
 | Cómo se "almacena el estado" de los sensores | Context store de Node-RED con persistencia a archivo (sin agregar una base de datos aparte) | Propuesto — el enunciado no especifica el mecanismo de almacenamiento |
