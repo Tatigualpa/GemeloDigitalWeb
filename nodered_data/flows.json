@@ -166,7 +166,7 @@
         "order": 1,
         "width": 8,
         "height": 3,
-        "format": "<div style='padding:8px 12px 14px 4px'>\n  <h2 style='margin:0 0 6px;font-size:22px;font-weight:700;color:#1f2328;letter-spacing:-.01em'>Gemelo Digital de Brazo — G6</h2>\n  <p style='margin:0 0 8px;font-size:13px;color:#6b7280'>Monitoreo en tiempo real por MQTT y control remoto del actuador · Bimestre 2</p>\n  <p style='margin:0;font-size:12px;color:#8a8f98;line-height:1.5'><b>Cómo usarlo:</b> los valores de hombro, codo y muñeca (fila de abajo) se actualizan solos apenas el sensor publica por MQTT. El switch de la derecha envía la orden al actuador; el indicador junto a él solo cambia de color cuando el actuador confirma que ya se movió.</p>\n</div>",
+        "format": "<div style='padding:8px 12px 14px 4px'>\n  <h2 style='margin:0 0 6px;font-size:22px;font-weight:700;color:#1f2328;letter-spacing:-.01em'>Gemelo Digital de Brazo — G6</h2>\n  <p style='margin:0 0 8px;font-size:13px;color:#6b7280'>Monitoreo en tiempo real por MQTT y control remoto del actuador</p>\n  <p style='margin:0;font-size:12px;color:#8a8f98;line-height:1.5'><b>Cómo usarlo:</b> los valores de hombro, codo y muñeca se actualizan solos apenas el sensor publica por MQTT. El switch de la derecha envía la orden al actuador; el indicador junto a él solo cambia de color cuando el actuador confirma que ya se movió.</p>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,

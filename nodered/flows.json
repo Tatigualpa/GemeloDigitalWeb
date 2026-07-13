@@ -58,19 +58,57 @@
                 "baseFont": "-apple-system,Helvetica Neue,Helvetica,Arial,sans-serif"
             },
             "themeState": {
-                "base-color": { "default": "#0094CE", "value": "#0094CE", "edited": false },
-                "page-titlebar-backgroundColor": { "value": "#0094CE", "edited": false },
-                "page-backgroundColor": { "value": "#fafafa", "edited": false },
-                "page-sidebar-backgroundColor": { "value": "#ffffff", "edited": false },
-                "group-textColor": { "value": "#1bbfff", "edited": false },
-                "group-borderColor": { "value": "#ffffff", "edited": false },
-                "group-backgroundColor": { "value": "#ffffff", "edited": false },
-                "widget-textColor": { "value": "#111111", "edited": false },
-                "widget-backgroundColor": { "value": "#0094CE", "edited": false },
-                "widget-borderColor": { "value": "#ffffff", "edited": false },
-                "base-font": { "value": "-apple-system,Helvetica Neue,Helvetica,Arial,sans-serif" }
+                "base-color": {
+                    "default": "#0094CE",
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-titlebar-backgroundColor": {
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-backgroundColor": {
+                    "value": "#fafafa",
+                    "edited": false
+                },
+                "page-sidebar-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-textColor": {
+                    "value": "#1bbfff",
+                    "edited": false
+                },
+                "group-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "widget-textColor": {
+                    "value": "#111111",
+                    "edited": false
+                },
+                "widget-backgroundColor": {
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "widget-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "base-font": {
+                    "value": "-apple-system,Helvetica Neue,Helvetica,Arial,sans-serif"
+                }
             },
-            "angularTheme": { "primary": "indigo", "accents": "blue", "warn": "red", "background": "grey" }
+            "angularTheme": {
+                "primary": "indigo",
+                "accents": "blue",
+                "warn": "red",
+                "background": "grey"
+            }
         },
         "site": {
             "name": "Gemelo Digital G6",
@@ -79,7 +117,16 @@
             "lockMenu": "false",
             "allowTempTheme": "true",
             "dateFormat": "DD/MM/YYYY",
-            "sizes": { "sx": 48, "sy": 48, "gx": 16, "gy": 16, "cx": 48, "cy": 48, "px": 16, "py": 16 }
+            "sizes": {
+                "sx": 48,
+                "sy": 48,
+                "gx": 16,
+                "gy": 16,
+                "cx": 48,
+                "cy": 48,
+                "px": 16,
+                "py": 16
+            }
         }
     },
     {
@@ -90,10 +137,26 @@
         "disabled": false,
         "hidden": false
     },
-
-    { "id": "g6_group_row1", "type": "ui_group", "name": "Fila 1", "tab": "g6_ui_tab", "order": 0, "disp": false, "width": "12", "collapse": false },
-    { "id": "g6_group_row2", "type": "ui_group", "name": "Fila 2", "tab": "g6_ui_tab", "order": 1, "disp": false, "width": "12", "collapse": false },
-
+    {
+        "id": "g6_group_row1",
+        "type": "ui_group",
+        "name": "Fila 1",
+        "tab": "g6_ui_tab",
+        "order": 0,
+        "disp": false,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "g6_group_row2",
+        "type": "ui_group",
+        "name": "Fila 2",
+        "tab": "g6_ui_tab",
+        "order": 1,
+        "disp": false,
+        "width": "12",
+        "collapse": false
+    },
     {
         "id": "n_tpl_header",
         "type": "ui_template",
@@ -103,7 +166,7 @@
         "order": 1,
         "width": 8,
         "height": 3,
-        "format": "<div style='padding:8px 12px 14px 4px'>\n  <h2 style='margin:0 0 6px;font-size:22px;font-weight:700;color:#1f2328;letter-spacing:-.01em'>Gemelo Digital de Brazo — G6</h2>\n  <p style='margin:0 0 8px;font-size:13px;color:#6b7280'>Monitoreo en tiempo real por MQTT y control remoto del actuador · Bimestre 2</p>\n  <p style='margin:0;font-size:12px;color:#8a8f98;line-height:1.5'><b>Cómo usarlo:</b> los valores de hombro, codo y muñeca (fila de abajo) se actualizan solos apenas el sensor publica por MQTT. El switch de la derecha envía la orden al actuador; el indicador junto a él solo cambia de color cuando el actuador confirma que ya se movió.</p>\n</div>",
+        "format": "<div style='padding:8px 12px 14px 4px'>\n  <h2 style='margin:0 0 6px;font-size:22px;font-weight:700;color:#1f2328;letter-spacing:-.01em'>Gemelo Digital de Brazo — G6</h2>\n  <p style='margin:0 0 8px;font-size:13px;color:#6b7280'>Monitoreo en tiempo real por MQTT y control remoto del actuador</p>\n  <p style='margin:0;font-size:12px;color:#8a8f98;line-height:1.5'><b>Cómo usarlo:</b> los valores de hombro, codo y muñeca se actualizan solos apenas el sensor publica por MQTT. El switch de la derecha envía la orden al actuador; el indicador junto a él solo cambia de color cuando el actuador confirma que ya se movió.</p>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
@@ -111,9 +174,10 @@
         "className": "",
         "x": 460,
         "y": 40,
-        "wires": [[]]
+        "wires": [
+            []
+        ]
     },
-
     {
         "id": "n_mqtt_in_hombro",
         "type": "mqtt in",
@@ -129,7 +193,12 @@
         "inputs": 0,
         "x": 180,
         "y": 100,
-        "wires": [["n_store_estado", "n_tpl_hombro"]]
+        "wires": [
+            [
+                "n_store_estado",
+                "n_tpl_hombro"
+            ]
+        ]
     },
     {
         "id": "n_mqtt_in_codo",
@@ -146,7 +215,12 @@
         "inputs": 0,
         "x": 180,
         "y": 180,
-        "wires": [["n_store_estado", "n_tpl_codo"]]
+        "wires": [
+            [
+                "n_store_estado",
+                "n_tpl_codo"
+            ]
+        ]
     },
     {
         "id": "n_mqtt_in_muneca",
@@ -163,9 +237,13 @@
         "inputs": 0,
         "x": 180,
         "y": 260,
-        "wires": [["n_store_estado", "n_tpl_muneca"]]
+        "wires": [
+            [
+                "n_store_estado",
+                "n_tpl_muneca"
+            ]
+        ]
     },
-
     {
         "id": "n_store_estado",
         "type": "function",
@@ -180,9 +258,10 @@
         "libs": [],
         "x": 460,
         "y": 340,
-        "wires": [[]]
+        "wires": [
+            []
+        ]
     },
-
     {
         "id": "n_tpl_hombro",
         "type": "ui_template",
@@ -200,7 +279,9 @@
         "className": "",
         "x": 440,
         "y": 100,
-        "wires": [[]]
+        "wires": [
+            []
+        ]
     },
     {
         "id": "n_tpl_codo",
@@ -219,7 +300,9 @@
         "className": "",
         "x": 430,
         "y": 180,
-        "wires": [[]]
+        "wires": [
+            []
+        ]
     },
     {
         "id": "n_tpl_muneca",
@@ -238,9 +321,10 @@
         "className": "",
         "x": 440,
         "y": 260,
-        "wires": [[]]
+        "wires": [
+            []
+        ]
     },
-
     {
         "id": "n_ui_switch_actuador",
         "type": "ui_switch",
@@ -269,7 +353,11 @@
         "className": "",
         "x": 210,
         "y": 460,
-        "wires": [["n_mqtt_out_cmd"]]
+        "wires": [
+            [
+                "n_mqtt_out_cmd"
+            ]
+        ]
     },
     {
         "id": "n_mqtt_out_cmd",
@@ -304,7 +392,11 @@
         "inputs": 0,
         "x": 220,
         "y": 540,
-        "wires": [["n_tpl_estado_actuador"]]
+        "wires": [
+            [
+                "n_tpl_estado_actuador"
+            ]
+        ]
     },
     {
         "id": "n_tpl_estado_actuador",
@@ -323,6 +415,8 @@
         "className": "",
         "x": 480,
         "y": 540,
-        "wires": [[]]
+        "wires": [
+            []
+        ]
     }
 ]

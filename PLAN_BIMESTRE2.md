@@ -162,7 +162,21 @@ El gauge del codo debe reaccionar. Para probar el actuador: mover el switch del 
 
 Solución aplicada: **un solo grupo por fila** (`g6_group_row1`, `g6_group_row2`, ambos width 12), y todo el contenido de cada fila como *widgets* dentro de ese único grupo — el acomodo de varios widgets dentro de un mismo grupo sí es un comportamiento fijo y confiable de Node-RED. Fila 1 = encabezado (8/12) + switch (2/12) + badge (2/12). Fila 2 = Hombro/Codo/Muñeca (4/12 cada uno). También se corrigió `cx`/`cy` a 48px y se aumentaron los gutters/padding para que se vea menos apretado. Redesplegado y reverificado.
 
-## Fase 3 — Puente MQTT → WebSocket para conservar la app React (archivo nuevo, no toca `serial-bridge.js`)
+## Fase 3 — Puente MQTT → WebSocket para conservar la app React ✅ completada 2026-07-13
+
+**Cómo se hizo:** `scripts/mqtt-ws-bridge.js` (archivo nuevo, `scripts/serial-bridge.js` no se tocó). Antes de escribirlo se leyó `serial-bridge.js` y `src/hooks/useSensorStream.js` completos para entender el contrato exacto: la app no solo espera `{sensor1, sensor2, sensor3}` con `ax..gz` — también espera `roll/pitch/yaw` ya calculados (el botón "Calibrar" opera sobre esos ángulos, no sobre el acelerómetro crudo), y escucha un comando `{cmd:'reset_orientation'}` que el cliente manda por el mismo WebSocket al calibrar. El cálculo de orientación (filtro complementario acelerómetro+giroscopio) se duplicó tal cual desde `serial-bridge.js` — a propósito, para no acoplar los dos puentes ni arriesgar tocar el que ya funcionaba.
+
+**Verificado con un cliente WebSocket de prueba (no forma parte del repo):**
+- Mapeo confirmado: tópico `hombro` -> `sensor3`, `codo` -> `sensor2`, `muneca` -> `sensor1` (coincide con el README).
+- Mensaje recibido con la forma exacta que espera `useSensorStream.js`, incluyendo `roll/pitch/yaw` calculados.
+- Una actualización parcial (solo hombro) generó un segundo mensaje reusando el caché de los otros dos sensores — mismo comportamiento que `serial-bridge.js`.
+- El comando `reset_orientation` enviado desde el cliente de prueba fue procesado por el puente (log: "Estado de orientación reiniciado por solicitud del cliente").
+
+**Dependencias:** `npm install` (primera vez que se corría en este proyecto — no existía `node_modules`) + `npm install mqtt` (aditivo). Se agregó el script `npm run mqtt-bridge` en `package.json`, análogo a `npm run serial`.
+
+**Recordatorio importante:** no correr `npm run serial` y `npm run mqtt-bridge` al mismo tiempo — los dos abren el WebSocket en el puerto 8081.
+
+### Detalle original de la fase (referencia)
 
 Objetivo: la app 3D (`src/`) siga funcionando exactamente igual, pero alimentada por MQTT en vez del puerto serial, sin tocar `DigitalArm.jsx`, `ArmScene.jsx`, `SensorCard.jsx` ni `useSensorStream.js` — todos siguen esperando el mismo formato JSON en `ws://localhost:8081`.
 
