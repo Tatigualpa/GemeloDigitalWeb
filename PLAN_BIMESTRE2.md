@@ -37,7 +37,12 @@ Esto no cambia el comportamiento de nada — ningún archivo se mueve ni se edit
 
 ---
 
-## Fase 1 — Infraestructura Docker (nueva, cero contacto con lo existente)
+## Fase 1 — Infraestructura Docker (nueva, cero contacto con lo existente) ✅ completada 2026-07-13
+
+**Nota de la ejecución real:** al levantar por primera vez este `docker-compose.yml` apareció un choque de nombres/puertos con otro contenedor tuyo — el laboratorio `mqtt_lab` de la guía de clase (`PruebaIIBIM\mqtt_lab`), que ya tenía corriendo sus propios contenedores `mosquitto` y `nodered` en los puertos `1883`/`1880`. Se resolvió deteniendo y eliminando esos contenedores (con tu confirmación explícita) — **sus datos no se tocaron**, viven en `PruebaIIBIM\mqtt_lab\mosquitto\` y `PruebaIIBIM\mqtt_lab\nodered_data\` en disco, y ese laboratorio se puede recrear en cualquier momento con `docker compose up -d` desde su propia carpeta. Si vuelves a trabajar en ese laboratorio mientras este proyecto también necesita los puertos 1883/1880, va a repetirse el mismo choque — hay que detener uno de los dos primero.
+
+Verificado: `docker ps` muestra `mosquitto` y `nodered` de **GemeloDigitalWeb** corriendo (mounts apuntando a esta carpeta, no a `mqtt_lab`). Prueba de mensajería real con `mosquitto_sub`/`mosquitto_pub` dentro del contenedor: un mensaje simulado en `g6/brazo/sensores/hombro` se recibió íntegro. Node-RED responde `HTTP 200` en `http://localhost:1880`.
+
 
 No requiere hardware. Se puede probar por completo desde la misma computadora.
 

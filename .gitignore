@@ -11,3 +11,8 @@ dist/
 
 .DS_Store
 Thumbs.db
+
+# Datos en vivo de los contenedores (no son código, no se versionan)
+mosquitto/data/
+mosquitto/log/
+nodered_data/
