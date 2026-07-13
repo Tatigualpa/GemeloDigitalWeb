@@ -140,6 +140,20 @@ El gauge del codo debe reaccionar. Para probar el actuador: mover el switch del 
 
 ---
 
+## Fase 2 — Dashboard en Node-RED ✅ completada 2026-07-13
+
+**Cómo se construyó:** en vez de armar el flujo a mano en el navegador, se escribió directamente el `nodered/flows.json` (19 nodos: broker MQTT, 3× `mqtt in` de sensores con parseo JSON automático, un `function` que centraliza el guardado de estado, 3× `ui_template` para lectura en tiempo real, `ui_switch` + `mqtt out` para el actuador, y `mqtt in` + `ui_text` para la confirmación de estado) y se desplegó directo contra la API de administración de Node-RED (`POST /flows`). El palette `node-red-dashboard` se instaló por línea de comandos (`npm install` dentro del contenedor) en vez de por el menú *Manage Palette* — mismo resultado.
+
+**Verificado, no asumido:**
+- Log del contenedor confirma la conexión real al broker: `[mqtt-broker] Connected to broker: mqtt://mosquitto:1883`.
+- `http://localhost:1880/ui/` responde `200`.
+- Se publicaron con `mosquitto_pub` los 3 sensores (con los mismos valores de ejemplo del README) y una confirmación de actuador — cero errores en los logs.
+- El archivo `nodered_data/context/g6_flow/flow.json` (persistencia a disco, `contextStorage` habilitado en `settings.js`) contiene exactamente los tres sensores publicados con su timestamp — el requisito de "almacenar el estado actual de los sensores" queda demostrado, no solo declarado.
+
+**Nota sobre `.gitignore`:** al instalar el palette del dashboard, `nodered_data/.npm/` (caché de instalación) casi se cuela al repositorio — no estaba contemplado en la regla original. Se agregó a `.gitignore` antes de comitear nada. Lección para las próximas fases: siempre revisar `git add -A -n` (dry run) antes de un `git add -A` real cuando se instala algo nuevo dentro de un volumen de Docker.
+
+**Lo único que falta de esta fase** es sensación visual en el navegador (que tú confirmes que el dashboard se ve bien) — desde este lado ya está probado que la mecánica de datos funciona de punta a punta.
+
 ## Fase 3 — Puente MQTT → WebSocket para conservar la app React (archivo nuevo, no toca `serial-bridge.js`)
 
 Objetivo: la app 3D (`src/`) siga funcionando exactamente igual, pero alimentada por MQTT en vez del puerto serial, sin tocar `DigitalArm.jsx`, `ArmScene.jsx`, `SensorCard.jsx` ni `useSensorStream.js` — todos siguen esperando el mismo formato JSON en `ws://localhost:8081`.

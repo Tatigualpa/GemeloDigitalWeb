@@ -15,4 +15,12 @@ Thumbs.db
 # Datos en vivo de los contenedores (no son código, no se versionan)
 mosquitto/data/
 mosquitto/log/
-nodered_data/
+
+# Node-RED: se versiona la configuración real (settings.js, flows.json,
+# package.json) pero no el cache/runtime interno que instala el contenedor
+nodered_data/node_modules/
+nodered_data/lib/
+nodered_data/.config*
+nodered_data/.npm/
+nodered_data/context/
+nodered_data/flows_cred.json
