@@ -24,3 +24,4 @@ nodered_data/.config*
 nodered_data/.npm/
 nodered_data/context/
 nodered_data/flows_cred.json
+nodered_data/.flows.json.backup

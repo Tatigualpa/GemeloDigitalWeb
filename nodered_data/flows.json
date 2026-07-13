@@ -4,7 +4,7 @@
         "type": "tab",
         "label": "Gemelo Digital G6",
         "disabled": false,
-        "info": "Fase 2 del Bimestre 2: dashboard MQTT. Recibe los 3 sensores del brazo (hombro, codo, muneca), guarda su ultimo estado, y controla + confirma el estado del actuador. Mientras no haya ESP32 fisico, se prueba publicando mensajes de prueba con mosquitto_pub en los mismos topicos."
+        "info": "Fase 2 del Bimestre 2: dashboard MQTT. Recibe los 3 sensores del brazo (hombro, codo, muneca), guarda su ultimo estado, y controla + confirma el estado del actuador. Mientras no haya ESP32 fisico, se prueba publicando mensajes de prueba con mosquitto_pub en los mismos topicos.\n\nLayout (v2, rediseno UX): cabecera arriba a todo el ancho, los 3 sensores en una fila (2+2+2 columnas), el panel del actuador abajo a todo el ancho con el switch y el badge de confirmacion lado a lado."
     },
     {
         "id": "g6_mqtt_broker",
@@ -138,13 +138,23 @@
         "hidden": false
     },
     {
+        "id": "g6_group_header",
+        "type": "ui_group",
+        "name": "Encabezado",
+        "tab": "g6_ui_tab",
+        "order": 0,
+        "disp": false,
+        "width": "6",
+        "collapse": false
+    },
+    {
         "id": "g6_group_hombro",
         "type": "ui_group",
         "name": "Hombro",
         "tab": "g6_ui_tab",
         "order": 1,
         "disp": true,
-        "width": "6",
+        "width": "2",
         "collapse": false
     },
     {
@@ -154,7 +164,7 @@
         "tab": "g6_ui_tab",
         "order": 2,
         "disp": true,
-        "width": "6",
+        "width": "2",
         "collapse": false
     },
     {
@@ -164,7 +174,7 @@
         "tab": "g6_ui_tab",
         "order": 3,
         "disp": true,
-        "width": "6",
+        "width": "2",
         "collapse": false
     },
     {
@@ -176,6 +186,27 @@
         "disp": true,
         "width": "6",
         "collapse": false
+    },
+    {
+        "id": "n_tpl_header",
+        "type": "ui_template",
+        "z": "g6_flow",
+        "group": "g6_group_header",
+        "name": "Encabezado del dashboard",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "format": "<div style='padding:8px 4px 14px'>\n  <h2 style='margin:0 0 4px;font-size:21px;font-weight:700;color:#1f2328;letter-spacing:-.01em'>Gemelo Digital de Brazo — G6</h2>\n  <p style='margin:0;font-size:13px;color:#6b7280'>Monitoreo en tiempo real por MQTT y control remoto del actuador · Bimestre 2</p>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 460,
+        "y": 40,
+        "wires": [
+            []
+        ]
     },
     {
         "id": "n_mqtt_in_hombro",
@@ -248,7 +279,7 @@
         "type": "function",
         "z": "g6_flow",
         "name": "Guardar estado sensores",
-        "func": "// Este nodo recibe los mensajes ya parseados (JSON) de los 3 sensores\n// del brazo (hombro, codo, muneca). msg.topic trae el topico MQTT\n// completo, por ejemplo: g6/brazo/sensores/hombro\n//\n// De ahi se extrae solo el nombre de la articulacion (la ultima parte\n// del topico, despues de la ultima \"/\") para usarla como llave dentro\n// del estado guardado.\nvar partes = msg.topic.split('/');\nvar articulacion = partes[partes.length - 1]; // \"hombro\" | \"codo\" | \"muneca\"\n\n// \"estado_sensores\" vive en el contexto del flow. Como settings.js tiene\n// contextStorage con modulo \"localfilesystem\", Node-RED escribe este\n// contexto a disco (dentro de nodered_data/context) cada 30 segundos.\n// Esto cumple el requisito de \"almacenar el estado actual de los\n// sensores\" sin necesitar una base de datos aparte.\nvar estado = flow.get('estado_sensores') || {};\nestado[articulacion] = {\n    valores: msg.payload,\n    ultima_actualizacion: new Date().toISOString()\n};\nflow.set('estado_sensores', estado);\n\n// No se reenvia el mensaje a ningun otro nodo: este nodo es solo\n// para persistir el estado. La visualizacion en tiempo real la hace\n// el ui_template conectado directamente a cada nodo \"mqtt in\".\nreturn null;",
+        "func": "// Este nodo recibe los mensajes ya parseados (JSON) de los 3 sensores\n// del brazo (hombro, codo, muneca). msg.topic trae el topico MQTT\n// completo, por ejemplo: g6/brazo/sensores/hombro\n//\n// De ahi se extrae solo el nombre de la articulacion (la ultima parte\n// del topico, despues de la ultima \"/\") para usarla como llave dentro\n// del estado guardado.\nvar partes = msg.topic.split('/');\nvar articulacion = partes[partes.length - 1]; // \"hombro\" | \"codo\" | \"muneca\"\n\n// \"estado_sensores\" vive en el contexto del flow. Como settings.js tiene\n// contextStorage con modulo \"localfilesystem\", Node-RED escribe este\n// contexto a disco (dentro de nodered_data/context) cada 30 segundos.\n// Esto cumple el requisito de \"almacenar el estado actual de los\n// sensores\" sin necesitar una base de datos aparte.\n//\n// IMPORTANTE: esto NO guarda un historial de movimientos, guarda solo\n// la ULTIMA lectura de cada articulacion (se sobreescribe cada vez).\n// Cada mensaje MQTT que llega dispara este guardado, sin importar si\n// el valor cambio o no respecto al anterior -- no hay logica de\n// \"solo guardar si la posicion cambio\", se guarda siempre que llega\n// un mensaje nuevo.\nvar estado = flow.get('estado_sensores') || {};\nestado[articulacion] = {\n    valores: msg.payload,\n    ultima_actualizacion: new Date().toISOString()\n};\nflow.set('estado_sensores', estado);\n\n// No se reenvia el mensaje a ningun otro nodo: este nodo es solo\n// para persistir el estado. La visualizacion en tiempo real la hace\n// el ui_template conectado directamente a cada nodo \"mqtt in\".\nreturn null;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -270,7 +301,7 @@
         "order": 1,
         "width": 0,
         "height": 0,
-        "format": "<div style='line-height:1.6'>\n  <b>Acelerómetro</b> — AX: {{msg.payload.ax}} · AY: {{msg.payload.ay}} · AZ: {{msg.payload.az}}<br>\n  <b>Giroscopio</b> — GX: {{msg.payload.gx}} · GY: {{msg.payload.gy}} · GZ: {{msg.payload.gz}}\n</div>",
+        "format": "<style>\n  .g6-card{padding:2px 2px 4px}\n  .g6-accent{height:3px;border-radius:2px;margin-bottom:12px;background:#2563EB}\n  .g6-sub{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#8a8f98;margin:0 0 8px}\n  .g6-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 8px}\n  .g6-cell{text-align:center}\n  .g6-label{display:block;font-size:10px;color:#9aa0a6;letter-spacing:.03em}\n  .g6-value{display:block;font-variant-numeric:tabular-nums;font-size:15px;font-weight:600;color:#1f2328}\n  .g6-divider{height:1px;background:#eef0f2;margin:10px 0}\n</style>\n<div class='g6-card'>\n  <div class='g6-accent'></div>\n  <p class='g6-sub'>Acelerómetro (LSB)</p>\n  <div class='g6-grid'>\n    <div class='g6-cell'><span class='g6-label'>AX</span><span class='g6-value'>{{msg.payload.ax}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>AY</span><span class='g6-value'>{{msg.payload.ay}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>AZ</span><span class='g6-value'>{{msg.payload.az}}</span></div>\n  </div>\n  <div class='g6-divider'></div>\n  <p class='g6-sub'>Giroscopio (LSB)</p>\n  <div class='g6-grid'>\n    <div class='g6-cell'><span class='g6-label'>GX</span><span class='g6-value'>{{msg.payload.gx}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>GY</span><span class='g6-value'>{{msg.payload.gy}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>GZ</span><span class='g6-value'>{{msg.payload.gz}}</span></div>\n  </div>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
@@ -291,7 +322,7 @@
         "order": 1,
         "width": 0,
         "height": 0,
-        "format": "<div style='line-height:1.6'>\n  <b>Acelerómetro</b> — AX: {{msg.payload.ax}} · AY: {{msg.payload.ay}} · AZ: {{msg.payload.az}}<br>\n  <b>Giroscopio</b> — GX: {{msg.payload.gx}} · GY: {{msg.payload.gy}} · GZ: {{msg.payload.gz}}\n</div>",
+        "format": "<style>\n  .g6-card{padding:2px 2px 4px}\n  .g6-accent{height:3px;border-radius:2px;margin-bottom:12px;background:#0D9488}\n  .g6-sub{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#8a8f98;margin:0 0 8px}\n  .g6-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 8px}\n  .g6-cell{text-align:center}\n  .g6-label{display:block;font-size:10px;color:#9aa0a6;letter-spacing:.03em}\n  .g6-value{display:block;font-variant-numeric:tabular-nums;font-size:15px;font-weight:600;color:#1f2328}\n  .g6-divider{height:1px;background:#eef0f2;margin:10px 0}\n</style>\n<div class='g6-card'>\n  <div class='g6-accent'></div>\n  <p class='g6-sub'>Acelerómetro (LSB)</p>\n  <div class='g6-grid'>\n    <div class='g6-cell'><span class='g6-label'>AX</span><span class='g6-value'>{{msg.payload.ax}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>AY</span><span class='g6-value'>{{msg.payload.ay}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>AZ</span><span class='g6-value'>{{msg.payload.az}}</span></div>\n  </div>\n  <div class='g6-divider'></div>\n  <p class='g6-sub'>Giroscopio (LSB)</p>\n  <div class='g6-grid'>\n    <div class='g6-cell'><span class='g6-label'>GX</span><span class='g6-value'>{{msg.payload.gx}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>GY</span><span class='g6-value'>{{msg.payload.gy}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>GZ</span><span class='g6-value'>{{msg.payload.gz}}</span></div>\n  </div>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
@@ -312,7 +343,7 @@
         "order": 1,
         "width": 0,
         "height": 0,
-        "format": "<div style='line-height:1.6'>\n  <b>Acelerómetro</b> — AX: {{msg.payload.ax}} · AY: {{msg.payload.ay}} · AZ: {{msg.payload.az}}<br>\n  <b>Giroscopio</b> — GX: {{msg.payload.gx}} · GY: {{msg.payload.gy}} · GZ: {{msg.payload.gz}}\n</div>",
+        "format": "<style>\n  .g6-card{padding:2px 2px 4px}\n  .g6-accent{height:3px;border-radius:2px;margin-bottom:12px;background:#D97706}\n  .g6-sub{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#8a8f98;margin:0 0 8px}\n  .g6-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 8px}\n  .g6-cell{text-align:center}\n  .g6-label{display:block;font-size:10px;color:#9aa0a6;letter-spacing:.03em}\n  .g6-value{display:block;font-variant-numeric:tabular-nums;font-size:15px;font-weight:600;color:#1f2328}\n  .g6-divider{height:1px;background:#eef0f2;margin:10px 0}\n</style>\n<div class='g6-card'>\n  <div class='g6-accent'></div>\n  <p class='g6-sub'>Acelerómetro (LSB)</p>\n  <div class='g6-grid'>\n    <div class='g6-cell'><span class='g6-label'>AX</span><span class='g6-value'>{{msg.payload.ax}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>AY</span><span class='g6-value'>{{msg.payload.ay}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>AZ</span><span class='g6-value'>{{msg.payload.az}}</span></div>\n  </div>\n  <div class='g6-divider'></div>\n  <p class='g6-sub'>Giroscopio (LSB)</p>\n  <div class='g6-grid'>\n    <div class='g6-cell'><span class='g6-label'>GX</span><span class='g6-value'>{{msg.payload.gx}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>GY</span><span class='g6-value'>{{msg.payload.gy}}</span></div>\n    <div class='g6-cell'><span class='g6-label'>GZ</span><span class='g6-value'>{{msg.payload.gz}}</span></div>\n  </div>\n</div>",
         "storeOutMessages": true,
         "fwdInMessages": true,
         "resendOnRefresh": true,
@@ -329,11 +360,11 @@
         "type": "ui_switch",
         "z": "g6_flow",
         "name": "Switch actuador",
-        "label": "Actuador del brazo",
-        "tooltip": "Envia ON/OFF al ESP32 por MQTT",
+        "label": "Encender actuador",
+        "tooltip": "Publica ON/OFF en g6/brazo/actuador/cmd — el ESP32 se suscribe a ese tópico",
         "group": "g6_group_actuador",
         "order": 1,
-        "width": 0,
+        "width": 2,
         "height": 0,
         "passthru": true,
         "decouple": "false",
@@ -373,7 +404,7 @@
         "expiry": "",
         "broker": "g6_mqtt_broker",
         "x": 460,
-        "y": 460,
+        "y": 420,
         "wires": []
     },
     {
@@ -393,29 +424,29 @@
         "y": 540,
         "wires": [
             [
-                "n_ui_text_estado"
+                "n_tpl_estado_actuador"
             ]
         ]
     },
     {
-        "id": "n_ui_text_estado",
-        "type": "ui_text",
+        "id": "n_tpl_estado_actuador",
+        "type": "ui_template",
         "z": "g6_flow",
         "group": "g6_group_actuador",
+        "name": "Badge estado confirmado",
         "order": 2,
-        "width": 0,
+        "width": 4,
         "height": 0,
-        "name": "Texto estado actuador",
-        "label": "Estado confirmado",
-        "format": "{{msg.payload}}",
-        "layout": "row-spread",
+        "format": "<style>\n  .g6-badgewrap{display:flex;align-items:center;height:100%;padding:6px 2px}\n  .g6-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;border-radius:999px;font-weight:600;font-size:14px}\n  .g6-dot{width:8px;height:8px;border-radius:50%;flex:none}\n</style>\n<div class='g6-badgewrap'>\n  <span class='g6-badge' ng-style=\"{background: msg.payload=='ON' ? '#DCFCE7' : '#F1F5F9', color: msg.payload=='ON' ? '#15803D' : '#64748B'}\">\n    <span class='g6-dot' ng-style=\"{background: msg.payload=='ON' ? '#22C55E' : '#94A3B8'}\"></span>\n    {{msg.payload || 'Sin confirmar todavía'}}\n  </span>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
         "className": "",
-        "style": false,
-        "font": "",
-        "fontSize": 16,
-        "color": "#000000",
-        "x": 470,
+        "x": 480,
         "y": 540,
-        "wires": []
+        "wires": [
+            []
+        ]
     }
 ]

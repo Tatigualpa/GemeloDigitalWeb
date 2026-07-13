@@ -152,7 +152,9 @@ El gauge del codo debe reaccionar. Para probar el actuador: mover el switch del 
 
 **Nota sobre `.gitignore`:** al instalar el palette del dashboard, `nodered_data/.npm/` (caché de instalación) casi se cuela al repositorio — no estaba contemplado en la regla original. Se agregó a `.gitignore` antes de comitear nada. Lección para las próximas fases: siempre revisar `git add -A -n` (dry run) antes de un `git add -A` real cuando se instala algo nuevo dentro de un volumen de Docker.
 
-**Lo único que falta de esta fase** es sensación visual en el navegador (que tú confirmes que el dashboard se ve bien) — desde este lado ya está probado que la mecánica de datos funciona de punta a punta.
+**Rediseño UX (2026-07-13, mismo día):** layout reorganizado a pedido — cabecera a todo el ancho, Hombro/Codo/Muñeca en una sola fila (2+2+2 columnas), panel de Actuador abajo a todo el ancho con el switch y un badge de confirmación de color semántico (verde=ON, gris=OFF) lado a lado. Cada tarjeta de sensor tiene un acento de color propio (hombro azul, codo verde-azulado, muñeca ámbar) y una grilla de 3 columnas para acelerómetro/giroscopio con números alineados (`tabular-nums`). Redesplegado y reverificado sin errores — ver explicación del mecanismo de guardado y del flujo del switch en la conversación / README.
+
+**Lo único que falta de esta fase** es que tú abras el navegador y confirmes que se ve bien — desde este lado ya está probado que la mecánica de datos funciona de punta a punta, pero el render visual final (spacing exacto, si el badge se ve bien en pantallas angostas, etc.) solo se puede juzgar mirándolo.
 
 ## Fase 3 — Puente MQTT → WebSocket para conservar la app React (archivo nuevo, no toca `serial-bridge.js`)
 
