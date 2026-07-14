@@ -443,7 +443,7 @@
         "width": 6,
         "height": 2,
         "passthru": true,
-        "outs": "all",
+        "outs": "end",
         "topic": "g6/brazo/hombro/angulo/cmd",
         "topicType": "str",
         "min": 0,
@@ -488,7 +488,7 @@
         "width": 6,
         "height": 2,
         "passthru": true,
-        "outs": "all",
+        "outs": "end",
         "topic": "g6/brazo/codo/angulo/cmd",
         "topicType": "str",
         "min": 0,
@@ -681,7 +681,7 @@
         "y": 460,
         "wires": [
             [
-                "n_mqtt_out_hombro_angulo"
+                "n_rate_limit_hombro"
             ]
         ]
     },
@@ -701,7 +701,80 @@
         "y": 520,
         "wires": [
             [
+                "n_rate_limit_codo"
+            ]
+        ]
+    },
+    {
+        "id": "n_rate_limit_hombro",
+        "type": "delay",
+        "z": "g6_flow",
+        "name": "Limitar tasa hombro (8/s, sin cola)",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "8",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": true,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 800,
+        "y": 460,
+        "wires": [
+            [
+                "n_mqtt_out_hombro_angulo"
+            ]
+        ]
+    },
+    {
+        "id": "n_rate_limit_codo",
+        "type": "delay",
+        "z": "g6_flow",
+        "name": "Limitar tasa codo (8/s, sin cola)",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "8",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": true,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 800,
+        "y": 520,
+        "wires": [
+            [
                 "n_mqtt_out_codo_angulo"
+            ]
+        ]
+    },
+    {
+        "id": "n_reset_modo",
+        "type": "inject",
+        "z": "g6_flow",
+        "name": "Reiniciar modo a Manual al desplegar",
+        "props": [
+            { "p": "payload" }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "false",
+        "payloadType": "bool",
+        "x": 300,
+        "y": 760,
+        "wires": [
+            [
+                "n_guardar_modo"
             ]
         ]
     }
