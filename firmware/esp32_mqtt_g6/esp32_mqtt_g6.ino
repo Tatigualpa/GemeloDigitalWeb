@@ -172,13 +172,21 @@ bool leerMPU(byte canal, int16_t &ax, int16_t &ay, int16_t &az,
 // PLAN_BIMESTRE2.md, Fase 6.3 -- IP del computador con "ipconfig", buscar el
 // adaptador del hotspot, normalmente 192.168.137.1 en Windows). NO usar
 // "localhost": el ESP32 es otro dispositivo en la red, no el mismo compu.
-const char* WIFI_SSID = "TODO_NOMBRE_DEL_HOTSPOT";
-const char* WIFI_PASSWORD = "TODO_CONTRASENA_DEL_HOTSPOT";
-const char* MQTT_HOST = "192.168.137.1";  // TODO: IP real del computador
+const char* WIFI_SSID = "TATIS";
+const char* WIFI_PASSWORD = "80(mF652";
+const char* MQTT_HOST = "192.168.137.1";
 const int MQTT_PORT = 1883;
 
 const char* TOPIC_ACTUADOR_CMD = "g6/brazo/actuador/cmd";
 const char* TOPIC_ACTUADOR_ESTADO = "g6/brazo/actuador/estado";
+
+// Tópicos de prueba manual: reciben un número (texto, ej. "90") y mueven
+// directamente ESE servo a ESE ángulo, sin pasar por la lógica de
+// abierto/cerrado. Sirven para probar el rango físico real de cada servo
+// desde un slider del dashboard, antes de tener lista la lógica de
+// seguimiento por sensor.
+const char* TOPIC_HOMBRO_ANGULO_CMD = "g6/brazo/hombro/angulo/cmd";
+const char* TOPIC_CODO_ANGULO_CMD = "g6/brazo/codo/angulo/cmd";
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
@@ -186,16 +194,27 @@ PubSubClient mqttClient(wifiClient);
 // ---------------------------------------------------------------------------
 // Actuador: servo que hace de "mano". Un solo GPIO, no PWM compartido con
 // nada del I2C (SDA=21, SCL=22 quedan intactos).
+//
+// PRUEBA DE 2 SERVOS: se agrega un segundo servo (para el codo) en el
+// GPIO 19, libre y sin conflicto con nada. Por ahora, a proposito, este
+// segundo servo NO tiene logica propia todavia -- se mueve exactamente
+// igual que el de la mano, en el mismo instante y al mismo angulo, solo
+// para confirmar que el ESP32 puede manejar 2 servos de PWM al mismo
+// tiempo sin problemas (de timing ni de alimentacion) antes de programar
+// el mapeo real "angulo del codo -> angulo del servo".
 // ---------------------------------------------------------------------------
 #define SERVO_PIN 18
+#define SERVO_CODO_PIN 19
 #define SERVO_ANGULO_ABIERTO 0
 #define SERVO_ANGULO_CERRADO 90
 
 Servo servoMano;
+Servo servoCodo;
 bool manoActualmenteCerrada = false;
 
 void moverMano(bool cerrar) {
   servoMano.write(cerrar ? SERVO_ANGULO_CERRADO : SERVO_ANGULO_ABIERTO);
+  servoCodo.write(cerrar ? SERVO_ANGULO_CERRADO : SERVO_ANGULO_ABIERTO);  // prueba: se mueve junto con el de la mano
   manoActualmenteCerrada = cerrar;
 
   // Publica el estado REAL (no solo el comando recibido) con retain=true,
@@ -205,24 +224,51 @@ void moverMano(bool cerrar) {
   // se movio, no solo que se envio la orden.
   mqttClient.publish(TOPIC_ACTUADOR_ESTADO, cerrar ? "ON" : "OFF", true);
 
+  int angulo = cerrar ? SERVO_ANGULO_CERRADO : SERVO_ANGULO_ABIERTO;
   Serial.print("[actuador] Mano ");
-  Serial.println(cerrar ? "CERRADA" : "ABIERTA");
+  Serial.print(cerrar ? "CERRADA" : "ABIERTA");
+  Serial.print(" -- se mando angulo ");
+  Serial.print(angulo);
+  Serial.println(" a los 2 servos (mano y codo)");
+}
+
+// Mueve un servo puntual a un angulo manual (0-180), con limite de
+// seguridad por si llega un numero fuera de rango o invalido (toInt()
+// devuelve 0 con texto no numerico, lo cual igual es un angulo valido,
+// asi que no hace falta validacion extra).
+void moverServoManual(Servo &servo, const char* nombreServo, int angulo) {
+  angulo = constrain(angulo, 0, 180);
+  servo.write(angulo);
+  Serial.print("[manual] ");
+  Serial.print(nombreServo);
+  Serial.print(" -> ");
+  Serial.print(angulo);
+  Serial.println(" grados");
 }
 
 void alRecibirMensajeMqtt(char* topic, byte* payload, unsigned int length) {
-  if (strcmp(topic, TOPIC_ACTUADOR_CMD) != 0) {
-    return;
-  }
-
   String mensaje;
   for (unsigned int i = 0; i < length; i++) {
     mensaje += (char)payload[i];
   }
 
-  if (mensaje == "ON") {
-    moverMano(true);
-  } else if (mensaje == "OFF") {
-    moverMano(false);
+  if (strcmp(topic, TOPIC_ACTUADOR_CMD) == 0) {
+    if (mensaje == "ON") {
+      moverMano(true);
+    } else if (mensaje == "OFF") {
+      moverMano(false);
+    }
+    return;
+  }
+
+  if (strcmp(topic, TOPIC_HOMBRO_ANGULO_CMD) == 0) {
+    moverServoManual(servoMano, "Hombro", mensaje.toInt());
+    return;
+  }
+
+  if (strcmp(topic, TOPIC_CODO_ANGULO_CMD) == 0) {
+    moverServoManual(servoCodo, "Codo", mensaje.toInt());
+    return;
   }
 }
 
@@ -251,6 +297,8 @@ void reconectarMqtt() {
     if (mqttClient.connect("ESP32-GemeloDigitalG6")) {
       Serial.println("conectado");
       mqttClient.subscribe(TOPIC_ACTUADOR_CMD);
+      mqttClient.subscribe(TOPIC_HOMBRO_ANGULO_CMD);
+      mqttClient.subscribe(TOPIC_CODO_ANGULO_CMD);
       // Re-publica el estado actual de la mano al (re)conectar, para que el
       // dashboard no se quede con un estado viejo si el ESP32 se reinicio
       // o perdio la conexion un momento.
@@ -343,8 +391,22 @@ void setup() {
     }
   }
 
-  servoMano.attach(SERVO_PIN);
-  moverMano(false);  // arranca con la mano abierta
+  // .attach() devuelve el canal LEDC que le asigno la libreria, o un valor
+  // invalido si no pudo reservar uno. Se imprime para diagnosticar si el
+  // problema de "un servo no se mueve" es de software (no consiguio canal)
+  // o de hardware (consiguio canal pero el servo fisico no responde).
+  int canalServoMano = servoMano.attach(SERVO_PIN);
+  int canalServoCodo = servoCodo.attach(SERVO_CODO_PIN);
+  Serial.print("[servo] Mano en GPIO");
+  Serial.print(SERVO_PIN);
+  Serial.print(" -> canal LEDC: ");
+  Serial.println(canalServoMano);
+  Serial.print("[servo] Codo en GPIO");
+  Serial.print(SERVO_CODO_PIN);
+  Serial.print(" -> canal LEDC: ");
+  Serial.println(canalServoCodo);
+
+  moverMano(false);  // arranca con ambos servos en la posicion abierta
 
   conectarWifi();
 

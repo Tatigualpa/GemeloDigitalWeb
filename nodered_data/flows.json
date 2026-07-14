@@ -158,6 +158,16 @@
         "collapse": false
     },
     {
+        "id": "g6_group_row3",
+        "type": "ui_group",
+        "name": "Prueba manual de ángulos (servos)",
+        "tab": "g6_ui_tab",
+        "order": 2,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
         "id": "n_tpl_header",
         "type": "ui_template",
         "z": "g6_flow",
@@ -418,5 +428,95 @@
         "wires": [
             []
         ]
+    },
+    {
+        "id": "n_slider_hombro_angulo",
+        "type": "ui_slider",
+        "z": "g6_flow",
+        "name": "Slider ángulo hombro",
+        "label": "Hombro — ángulo manual (0-180°)",
+        "tooltip": "Mueve el servo del hombro (GPIO18) directo a este ángulo, sin pasar por ON/OFF",
+        "group": "g6_group_row3",
+        "order": 1,
+        "width": 6,
+        "height": 2,
+        "passthru": true,
+        "outs": "all",
+        "topic": "g6/brazo/hombro/angulo/cmd",
+        "topicType": "str",
+        "min": 0,
+        "max": 180,
+        "step": 1,
+        "className": "",
+        "x": 220,
+        "y": 620,
+        "wires": [
+            [
+                "n_mqtt_out_hombro_angulo"
+            ]
+        ]
+    },
+    {
+        "id": "n_mqtt_out_hombro_angulo",
+        "type": "mqtt out",
+        "z": "g6_flow",
+        "name": "Comando -> hombro/angulo/cmd",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "g6_mqtt_broker",
+        "x": 480,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "n_slider_codo_angulo",
+        "type": "ui_slider",
+        "z": "g6_flow",
+        "name": "Slider ángulo codo",
+        "label": "Codo — ángulo manual (0-180°)",
+        "tooltip": "Mueve el servo del codo (GPIO19) directo a este ángulo, sin pasar por ON/OFF",
+        "group": "g6_group_row3",
+        "order": 2,
+        "width": 6,
+        "height": 2,
+        "passthru": true,
+        "outs": "all",
+        "topic": "g6/brazo/codo/angulo/cmd",
+        "topicType": "str",
+        "min": 0,
+        "max": 180,
+        "step": 1,
+        "className": "",
+        "x": 220,
+        "y": 680,
+        "wires": [
+            [
+                "n_mqtt_out_codo_angulo"
+            ]
+        ]
+    },
+    {
+        "id": "n_mqtt_out_codo_angulo",
+        "type": "mqtt out",
+        "z": "g6_flow",
+        "name": "Comando -> codo/angulo/cmd",
+        "topic": "",
+        "qos": "",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "g6_mqtt_broker",
+        "x": 470,
+        "y": 680,
+        "wires": []
     }
 ]
