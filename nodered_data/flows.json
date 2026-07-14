@@ -160,7 +160,7 @@
     {
         "id": "g6_group_row3",
         "type": "ui_group",
-        "name": "Prueba manual de ángulos (servos)",
+        "name": "Control de servos — automático o manual",
         "tab": "g6_ui_tab",
         "order": 2,
         "disp": true,
@@ -206,7 +206,8 @@
         "wires": [
             [
                 "n_store_estado",
-                "n_tpl_hombro"
+                "n_tpl_hombro",
+                "n_calc_hombro_angulo"
             ]
         ]
     },
@@ -228,7 +229,8 @@
         "wires": [
             [
                 "n_store_estado",
-                "n_tpl_codo"
+                "n_tpl_codo",
+                "n_calc_codo_angulo"
             ]
         ]
     },
@@ -452,7 +454,7 @@
         "y": 620,
         "wires": [
             [
-                "n_mqtt_out_hombro_angulo"
+                "n_tag_manual_hombro"
             ]
         ]
     },
@@ -497,7 +499,7 @@
         "y": 680,
         "wires": [
             [
-                "n_mqtt_out_codo_angulo"
+                "n_tag_manual_codo"
             ]
         ]
     },
@@ -518,5 +520,189 @@
         "x": 470,
         "y": 680,
         "wires": []
+    },
+    {
+        "id": "n_switch_modo",
+        "type": "ui_switch",
+        "z": "g6_flow",
+        "name": "Switch modo",
+        "label": "Modo: Automático (seguir sensores)",
+        "tooltip": "ON = los servos siguen al hombro/codo en tiempo real. OFF = control manual con los sliders de abajo.",
+        "group": "g6_group_row3",
+        "order": 0,
+        "width": 12,
+        "height": 1,
+        "passthru": false,
+        "decouple": "false",
+        "topic": "modo",
+        "topicType": "str",
+        "style": "",
+        "onvalue": "true",
+        "onvalueType": "bool",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "false",
+        "offvalueType": "bool",
+        "officon": "",
+        "offcolor": "",
+        "animate": true,
+        "className": "",
+        "x": 220,
+        "y": 560,
+        "wires": [
+            [
+                "n_guardar_modo"
+            ]
+        ]
+    },
+    {
+        "id": "n_guardar_modo",
+        "type": "function",
+        "z": "g6_flow",
+        "name": "Guardar modo",
+        "func": "// Guarda el modo actual (true = Automatico, false = Manual) en el\n// contexto del flow. Los nodos \"gate\" de cada servo (n_gate_hombro,\n// n_gate_codo) leen esta misma variable para decidir si dejan pasar\n// el valor del slider manual o el valor calculado desde el sensor.\n//\n// Si nadie toco el switch todavia, flow.get devuelve undefined, y los\n// gates lo tratan como \"false\" (Manual) -- arranca en modo manual por\n// seguridad, no mueve los servos solo por sensores sin que alguien lo\n// active a proposito.\nflow.set('modo_automatico', msg.payload === true);\nreturn null;",
+        "outputs": 0,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 470,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "n_calc_hombro_angulo",
+        "type": "function",
+        "z": "g6_flow",
+        "name": "Calcular ángulo hombro",
+        "func": "// Calcula el angulo del servo del hombro a partir del acelerometro\n// crudo del sensor de hombro (eje AY -- fue el eje que en la\n// calibracion real mostro el barrido mas limpio entre \"abajo\" y\n// \"arriba\", sin necesitar atan2).\n//\n// Calibracion real (2026-07-14), promediando muestras con el brazo\n// quieto en cada pose:\n//   AY = +15916  -> brazo pegado al cuerpo, abajo      -> servo 0 grados\n//   AY = -12363  -> brazo estirado completamente arriba -> servo 180 grados\n//\n// Tambien se guarda este AY crudo en el contexto del flow: el calculo\n// del codo (nodo n_calc_codo_angulo) lo necesita para restar el\n// movimiento del hombro y aislar la flexion real del codo.\nvar AY_ABAJO = 15916;\nvar AY_ARRIBA = -12363;\n\nvar ay = msg.payload.ay;\nflow.set('ultimo_hombro_ay', ay);\n\nvar angulo = (ay - AY_ABAJO) / (AY_ARRIBA - AY_ABAJO) * 180;\nangulo = Math.max(0, Math.min(180, angulo)); // recorte de seguridad, nunca sale de 0-180\n\nmsg.payload = String(Math.round(angulo));\nmsg.topic = \"g6/brazo/hombro/angulo/cmd\";\nmsg.origen = \"auto\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 100,
+        "wires": [
+            [
+                "n_gate_hombro"
+            ]
+        ]
+    },
+    {
+        "id": "n_calc_codo_angulo",
+        "type": "function",
+        "z": "g6_flow",
+        "name": "Calcular ángulo codo",
+        "func": "// Calcula el angulo del servo del codo, pero NO desde el AY crudo del\n// codo solo -- usa la DIFERENCIA entre el AY del codo y el ultimo AY\n// del hombro (guardado por n_calc_hombro_angulo).\n//\n// Por que: el sensor del codo mide inclinacion absoluta respecto a la\n// gravedad, no el angulo real de la articulacion. Si subes el hombro\n// con el codo recto, el AY del codo cambia casi igual que el del\n// hombro, aunque el codo no se haya flexionado nada (esto se\n// confirmo con datos reales durante la calibracion). Restando el AY\n// del hombro se cancela ese movimiento compartido y queda solo la\n// flexion real del codo.\n//\n// Calibracion real (2026-07-14):\n//   diferencia ~ +709   -> codo recto (promedio de +434 y +984,\n//                          medido con el hombro abajo y arriba)\n//   diferencia = -27207 -> codo flexionado al maximo\nvar DIFF_RECTO = 709;\nvar DIFF_FLEXIONADO = -27207;\n\nvar ultimoHombroAy = flow.get('ultimo_hombro_ay');\nif (ultimoHombroAy === undefined) {\n    // Todavia no llego ninguna lectura del hombro -- no se puede\n    // calcular la diferencia todavia, se ignora este mensaje.\n    return null;\n}\n\nvar codoAy = msg.payload.ay;\nvar diferencia = codoAy - ultimoHombroAy;\n\nvar angulo = (diferencia - DIFF_RECTO) / (DIFF_FLEXIONADO - DIFF_RECTO) * 180;\nangulo = Math.max(0, Math.min(180, angulo));\n\nmsg.payload = String(Math.round(angulo));\nmsg.topic = \"g6/brazo/codo/angulo/cmd\";\nmsg.origen = \"auto\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 180,
+        "wires": [
+            [
+                "n_gate_codo"
+            ]
+        ]
+    },
+    {
+        "id": "n_tag_manual_hombro",
+        "type": "change",
+        "z": "g6_flow",
+        "name": "Tag: origen manual",
+        "rules": [
+            {
+                "t": "set",
+                "p": "origen",
+                "pt": "msg",
+                "to": "manual",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 460,
+        "y": 620,
+        "wires": [
+            [
+                "n_gate_hombro"
+            ]
+        ]
+    },
+    {
+        "id": "n_tag_manual_codo",
+        "type": "change",
+        "z": "g6_flow",
+        "name": "Tag: origen manual",
+        "rules": [
+            {
+                "t": "set",
+                "p": "origen",
+                "pt": "msg",
+                "to": "manual",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 460,
+        "y": 680,
+        "wires": [
+            [
+                "n_gate_codo"
+            ]
+        ]
+    },
+    {
+        "id": "n_gate_hombro",
+        "type": "function",
+        "z": "g6_flow",
+        "name": "Gate modo (hombro)",
+        "func": "// Deja pasar el mensaje solo si su origen coincide con el modo\n// actual: en modo Automatico solo pasan los mensajes calculados\n// desde el sensor (origen \"auto\"); en modo Manual solo pasan los que\n// vienen del slider (origen \"manual\"). Asi el slider y el calculo\n// automatico nunca compiten por mandarle un angulo distinto al servo\n// al mismo tiempo.\nvar modoAutomatico = flow.get('modo_automatico') || false;\nvar dejarPasar = modoAutomatico ? (msg.origen === 'auto') : (msg.origen === 'manual');\nreturn dejarPasar ? msg : null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 460,
+        "wires": [
+            [
+                "n_mqtt_out_hombro_angulo"
+            ]
+        ]
+    },
+    {
+        "id": "n_gate_codo",
+        "type": "function",
+        "z": "g6_flow",
+        "name": "Gate modo (codo)",
+        "func": "// Misma logica que n_gate_hombro, pero para el servo del codo.\nvar modoAutomatico = flow.get('modo_automatico') || false;\nvar dejarPasar = modoAutomatico ? (msg.origen === 'auto') : (msg.origen === 'manual');\nreturn dejarPasar ? msg : null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 520,
+        "wires": [
+            [
+                "n_mqtt_out_codo_angulo"
+            ]
+        ]
     }
 ]
